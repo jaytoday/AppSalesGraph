@@ -1,22 +1,11 @@
 # AppSalesGraph: AppStore Sales Graphing
 # Copyright (c) 2010 by Max Klein (maximusklein@gmail.com)
 #
-# GNU General Public Licence (GPL)
-# 
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the GNU General Public License as published by the Free Software
-# Foundation; either version 2 of the License, or (at your option) any later
-# version.
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
-# details.
-# You should have received a copy of the GNU General Public License along with
-# this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-# Place, Suite 330, Boston, MA  02111-1307  USA
-#
-
-
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
+ 
 import locale
 import matplotlib
 import pickle
@@ -24,6 +13,7 @@ from pyDes import *
 import sys, os, wx
 from datetime import datetime
 from datetime import date
+from currency import ExchangeRate
 
 locale.setlocale(locale.LC_ALL, '')
 
@@ -103,6 +93,8 @@ def do_one_time_debug_init():
     if not loc[len(loc)-1] == "/":
         loc = loc + "/"
 
+    # Load currentcy file
+    ExchangeRate.get("USD")
     
 def format_currency(val):
     return "$" + str(round(val, 2))

@@ -52,7 +52,7 @@
 
 # -- Change the following to match your credentials --
 # -- or use the command line options.               --
-appleId = 'Your Apple Id'
+appleId = 'Your Apple Id' 
 password = 'Your Password'
 outputDirectory = ''
 unzipFile = False
@@ -191,18 +191,52 @@ def downloadFile(options, notify_window, days_to_download):
         wx.PostEvent(notify_window, ResultEvent("SalesDownloadError: Could not login"))
         return [], True
     
+    if html_lc.find("checkvendoridnumber") > 0:
+        # Oh, oh, we have a multiple vendor login
+        
+        soup = BeautifulSoup.BeautifulSoup( html )
+        
+        # Let's get all vendor IDs
+        selectField = soup.find( 'select', attrs={'id': 'selectName'} )
+        html_options = selectField.findAll('option')
+        for option in html_options:
+            val = option['value']
+            if val == "0": continue
+            
+            # Get the url to post to
+            form = soup.find( 'form', attrs={'name': 'superPage' } )
+            urlSelectVendor = urlBase % form['action']
+            wosid1 = soup.find( 'input', attrs={'name': 'wosid'} )['value']
+            # countryName = soup.find( 'input', attrs={'id': 'hiddenCountryName'} )['value']
+            
+            # This is fragile. It should be parsed from the html
+            vendorSelectData = urllib.urlencode({'vndrid': val, 'wosid':wosid1, '9.6.0':val, '9.18':"", 'SubmitBtn':'Submit'})
+            
+            html = readHtml(opener, urlSelectVendor, vendorSelectData)
+            
+            if html.find("selDateType") > 0:
+                # Looks like we found the page
+                html_lc = html.lower()
+                break
+            break # Let's just do first vendor for now
+
+        if html.find("selDateType") <= 0:
+            # Page was not opened
+            wx.PostEvent(notify_window, ResultEvent("SalesDownloadError: Multiple Vendors not supported"))
+            return [], True
+            
     if shutDownSalesDownload == True: return None, None
     
     # Get the form field names needed to download the report.
     successfully_parsed = False
     if BeautifulSoup:
-        if options.verbose == True:
-            wx.PostEvent(notify_window, ResultEvent("Logged in! Accessing sales data"))
+        # if options.verbose == True:
+        wx.PostEvent(notify_window, ResultEvent("Logged in! Accessing sales data"))
             
             # print 'using BeautifulSoap for HTML parsing'
         try:
             soup = BeautifulSoup.BeautifulSoup( html )
-            print html
+            # print html
             
             form = soup.find( 'form', attrs={'name': 'frmVendorPage' } )
         
@@ -298,6 +332,11 @@ def downloadFile(options, notify_window, days_to_download):
             if shutDownSalesDownload == True: return None, None
             
             filename = urlHandle.info().getheader('content-disposition').split('=')[1]
+            
+            # For some reason, there are geese feet on the filename
+            filename = filename.replace("'", "")
+            filename = filename.replace("\"", "")
+            
             # filesize = urlHandle.info().getheader('size')
             # wx.PostEvent(notify_window, ResultEvent("Getting Sales: " + downloadReportDate + " (" + filesize + ")"))
             
